@@ -1,16 +1,69 @@
 import { useState } from 'react';
 import { generateShareText } from '../lib/puzzle';
 
+type SaveStatus = 'sign-in' | 'pending' | 'saved' | 'kept' | 'error' | null;
+
 interface CompletionModalProps {
   puzzleNumber: number;
   moveCount: number;
   onClose: () => void;
+  saveStatusMessage: SaveStatus;
+  onSignIn: () => void;
+}
+
+function SaveStatusDisplay({
+  status,
+  onSignIn,
+}: {
+  status: SaveStatus;
+  onSignIn: () => void;
+}) {
+  if (!status) return null;
+
+  switch (status) {
+    case 'sign-in':
+      return (
+        <button
+          onClick={onSignIn}
+          className="text-sm text-blue-500 hover:text-blue-600
+            transition-colors duration-150 cursor-pointer font-medium"
+        >
+          Sign in to save your score →
+        </button>
+      );
+    case 'pending':
+      return (
+        <p className="text-sm text-gray-400 animate-pulse">Saving score…</p>
+      );
+    case 'saved':
+      return (
+        <p className="text-sm text-emerald-600 font-medium animate-fade-in">
+          ✓ Score saved to leaderboard
+        </p>
+      );
+    case 'kept':
+      return (
+        <p className="text-sm text-amber-600 font-medium animate-fade-in">
+          ✓ Best score kept
+        </p>
+      );
+    case 'error':
+      return (
+        <p className="text-sm text-red-500 font-medium animate-fade-in">
+          ✗ Failed to save score
+        </p>
+      );
+    default:
+      return null;
+  }
 }
 
 export default function CompletionModal({
   puzzleNumber,
   moveCount,
   onClose,
+  saveStatusMessage,
+  onSignIn,
 }: CompletionModalProps) {
   const [copied, setCopied] = useState(false);
 
@@ -39,6 +92,9 @@ export default function CompletionModal({
           </p>
           <p className="text-gray-300 text-xs">8×8 · 5 colors</p>
         </div>
+
+        {/* Save status */}
+        <SaveStatusDisplay status={saveStatusMessage} onSignIn={onSignIn} />
 
         <div className="flex flex-col gap-3">
           <button

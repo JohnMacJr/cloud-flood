@@ -4,18 +4,52 @@ A daily color-flood puzzle game. Capture the entire 8×8 board in as few moves a
 
 Everyone gets the same puzzle each day — come back tomorrow for a new one.
 
+## Features
+
+- 🎨 8×8 board with 5 colorblind-friendly colors
+- 🎯 Deterministic daily puzzle (same puzzle for everyone)
+- 🔐 Google sign-in via Firebase Auth
+- 🏆 Daily leaderboard powered by Firestore
+- 📊 Personal stats (total puzzles, best score)
+- 📋 Share your result
+- ⟲ Reset puzzle
+
 ## Getting Started
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
 - npm (included with Node.js)
+- A Firebase project with Auth (Google provider) and Firestore enabled
 
 ### Install Dependencies
 
 ```bash
 npm install
 ```
+
+### Configure Firebase
+
+1. Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Fill in your Firebase project values in `.env`. Find these in the [Firebase Console](https://console.firebase.google.com/) → Project Settings → General → Your apps → Web app:
+
+```
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+```
+
+3. In the Firebase Console, enable:
+   - **Authentication** → Sign-in method → Google
+   - **Firestore Database** → Create database (start in production mode)
 
 ### Run Locally
 
@@ -39,61 +73,26 @@ npm run build
 
 The output goes to the `dist/` directory.
 
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
 ---
 
-## Push to GitHub
+## Deploy
 
-```bash
-git init
-git add .
-git commit -m "Initial commit: Daily Flood puzzle game"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/cloud-flood.git
-git push -u origin main
-```
-
----
-
-## Deploy to Firebase Hosting
-
-### 1. Install Firebase CLI
-
-```bash
-npm install -g firebase-tools
-```
-
-### 2. Log in to Firebase
-
-```bash
-firebase login
-```
-
-### 3. Set Your Project ID
-
-Copy the example config and replace the placeholder with your real Firebase project ID:
-
-```bash
-cp .firebaserc.example .firebaserc
-```
-
-Edit `.firebaserc` and replace `your-firebase-project-id` with your actual project ID.
-
-### 4. Build and Deploy
+### Deploy Hosting + Firestore Rules
 
 ```bash
 npm run build
-firebase deploy --only hosting
+firebase deploy --only hosting,firestore:rules
+```
+
+### Deploy Firestore Rules Only
+
+```bash
+firebase deploy --only firestore:rules
 ```
 
 Your app will be live at `https://YOUR_PROJECT_ID.web.app`.
 
-> **Note:** Do not commit `.firebaserc` — it contains your project-specific ID and is excluded by `.gitignore`.
+> **Note:** Do not commit `.firebaserc` or `.env` — they contain project-specific config and are excluded by `.gitignore`.
 
 ---
 
@@ -102,25 +101,57 @@ Your app will be live at `https://YOUR_PROJECT_ID.web.app`.
 ```
 cloud-flood/
 ├── src/
-│   ├── lib/           # Pure game logic (no React dependencies)
-│   ├── components/    # React UI components
-│   ├── App.tsx        # Main app with state management
-│   ├── main.tsx       # Entry point
-│   └── index.css      # Tailwind + custom styles
-├── tests/             # Vitest test files
-├── firebase.json      # Firebase Hosting config
-├── vite.config.ts     # Vite + Tailwind + Vitest config
-└── index.html         # HTML entry point
+│   ├── lib/              # Pure game logic + Firebase services
+│   │   ├── boardGen.ts       # Deterministic board generation
+│   │   ├── constants.ts      # Grid size, colors, epoch
+│   │   ├── firebase.ts       # Firebase app/auth/db initialization
+│   │   ├── floodFill.ts      # Flood fill algorithm
+│   │   ├── leaderboard.ts    # Firestore read/write operations
+│   │   ├── puzzle.ts         # Puzzle number, date formatting
+│   │   └── seededRandom.ts   # Mulberry32 PRNG
+│   ├── hooks/             # Custom React hooks
+│   │   ├── useAuth.ts        # Firebase Auth state
+│   │   └── useLeaderboard.ts # Leaderboard subscription + stats
+│   ├── components/        # React UI components
+│   │   ├── AuthBar.tsx        # Sign-in/out bar
+│   │   ├── Board.tsx          # Game board grid
+│   │   ├── ColorPicker.tsx    # Color selection buttons
+│   │   ├── CompletionModal.tsx# Win modal with share + save status
+│   │   ├── Controls.tsx       # Reset button
+│   │   ├── GameHeader.tsx     # Title, date, move counter
+│   │   └── Leaderboard.tsx    # Leaderboard panel
+│   ├── App.tsx            # Main app with state management
+│   ├── main.tsx           # Entry point
+│   └── index.css          # Tailwind + custom styles
+├── tests/                 # Vitest test files
+├── docs/                  # Architecture documentation
+│   ├── architecture.md       # System design & data model
+│   └── security-plan.md      # Phase 1/2 security roadmap
+├── firebase.json          # Firebase Hosting + Firestore config
+├── firestore.rules        # Firestore security rules
+├── .env.example           # Environment variable template
+├── vite.config.ts         # Vite + Tailwind + Vitest config
+└── index.html             # HTML entry point
 ```
+
+## Architecture
+
+See [docs/architecture.md](docs/architecture.md) for the full cloud architecture documentation.
+
+## Security
+
+See [docs/security-plan.md](docs/security-plan.md) for the security model, including Phase 1 limitations and the Phase 2 Cloud Run migration plan.
 
 ## Roadmap
 
-This is currently the local single-player version. Future cloud-native features will include:
-
-- Backend API
-- Authentication
-- Database (leaderboards, streaks)
-- Cloud deployment via Cloud Run
+- [x] Local single-player game
+- [x] Firebase Hosting deployment
+- [x] Firebase Auth (Google sign-in)
+- [x] Firestore leaderboard
+- [x] User score persistence & stats
+- [ ] Cloud Run backend (server-side score validation)
+- [ ] Streak tracking
+- [ ] Additional game modes
 
 ---
 
