@@ -29,7 +29,8 @@ type GameAction =
   | { type: 'MOVE'; color: number }
   | { type: 'RESET' }
   | { type: 'CLOSE_MODAL' }
-  | { type: 'MARK_SAVED' };
+  | { type: 'MARK_SAVED' }
+  | { type: 'LOCK_COMPLETED'; moves: number };
 
 function createInitialState(): GameState {
   const dateStr = getTodayDateStr();
@@ -86,6 +87,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'MARK_SAVED':
       return { ...state, scoreSaved: true };
 
+    case 'LOCK_COMPLETED':
+      // Lock the game when we detect the user already has a saved score for today
+      return {
+        ...state,
+        solved: true,
+        scoreSaved: true,
+        showModal: false,
+        moveCount: action.moves,
+      };
+
     default:
       return state;
   }
@@ -95,11 +106,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState);
-  const { user, loading: authLoading, signIn, signOut } = useAuth();
+  const { user, signIn } = useAuth();
   const leaderboard = useLeaderboard(state.dateStr, user);
 
   // Track whether we've already triggered auto-save for the current solve
   const autoSaveTriggered = useRef(false);
+
+  // Track whether we've already checked for an existing score on this session
+  const existingScoreChecked = useRef(false);
 
   const handlePickColor = useCallback(
     (color: number) => dispatch({ type: 'MOVE', color }),
@@ -114,6 +128,24 @@ export default function App() {
   const handleCloseModal = useCallback(() => dispatch({ type: 'CLOSE_MODAL' }), []);
 
   const currentColor = getCapturedColor(state.board);
+
+  // ── Lock game if user already has a score for today ──
+  useEffect(() => {
+    if (
+      user &&
+      leaderboard.userScore &&
+      !existingScoreChecked.current
+    ) {
+      existingScoreChecked.current = true;
+      // User already played today — lock the game
+      dispatch({ type: 'LOCK_COMPLETED', moves: leaderboard.userScore.moves });
+    }
+  }, [user, leaderboard.userScore]);
+
+  // Reset the check flag when user changes (sign out → sign in with different account)
+  useEffect(() => {
+    existingScoreChecked.current = false;
+  }, [user]);
 
   // ── Auto-save score on solve (if signed in) ──
   useEffect(() => {
@@ -156,10 +188,12 @@ export default function App() {
     return null;
   })();
 
+  // Whether the user already completed today's puzzle (has a saved score)
+  const alreadyPlayed = Boolean(user && leaderboard.userScore && state.scoreSaved);
+
   return (
     <div className="min-h-dvh bg-[#f0eeeb] flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-
 
         {/* Header */}
         <GameHeader
@@ -168,23 +202,38 @@ export default function App() {
           moveCount={state.moveCount}
         />
 
+        {/* Already-played message */}
+        {alreadyPlayed && (
+          <div className="text-center animate-fade-in">
+            <p className="text-sm text-gray-400">
+              You already completed today's puzzle in{' '}
+              <span className="font-semibold text-gray-600">{leaderboard.userScore!.moves} moves</span>.
+              Come back tomorrow for a new one!
+            </p>
+          </div>
+        )}
+
         {/* Board */}
         <div className="bg-white rounded-2xl p-3 border border-gray-200">
           <Board board={state.board} />
         </div>
 
-        {/* Color Picker */}
-        <ColorPicker
-          currentColor={currentColor}
-          onPickColor={handlePickColor}
-          disabled={state.solved}
-        />
+        {/* Color Picker — hidden if already played */}
+        {!alreadyPlayed && (
+          <ColorPicker
+            currentColor={currentColor}
+            onPickColor={handlePickColor}
+            disabled={state.solved}
+          />
+        )}
 
-        {/* Controls */}
-        <Controls
-          onReset={handleReset}
-          disabled={state.solved}
-        />
+        {/* Controls — hidden if already played */}
+        {!alreadyPlayed && (
+          <Controls
+            onReset={handleReset}
+            disabled={state.solved}
+          />
+        )}
 
         {/* Leaderboard */}
         <Leaderboard

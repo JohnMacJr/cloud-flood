@@ -64,7 +64,6 @@ export function useLeaderboard(
     const q = query(
       scoresCollection,
       orderBy('moves', 'asc'),
-      orderBy('solvedAt', 'asc'),
       limit(10),
     );
 

@@ -110,7 +110,7 @@ export async function getTodayScores(
   max = 10,
 ): Promise<LeaderboardEntry[]> {
   const scoresCol = collection(requireDb(), 'leaderboards', dateKey, 'scores');
-  const q = query(scoresCol, orderBy('moves', 'asc'), orderBy('solvedAt', 'asc'), limit(max));
+  const q = query(scoresCol, orderBy('moves', 'asc'), limit(max));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => d.data() as LeaderboardEntry);
 }
