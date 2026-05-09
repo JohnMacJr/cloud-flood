@@ -32,7 +32,8 @@ type GameAction =
   | { type: 'CLOSE_MODAL' }
   | { type: 'MARK_SAVED' }
   | { type: 'LOCK_COMPLETED'; moves: number }
-  | { type: 'NEW_DAY' };
+  | { type: 'NEW_DAY' }
+  | { type: 'SIGN_OUT_RESET' };
 
 function createInitialState(): GameState {
   const dateStr = getTodayDateStr();
@@ -129,6 +130,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // UTC date changed — generate fresh puzzle
       return createInitialState();
 
+    case 'SIGN_OUT_RESET':
+      // User signed out. Clear their local game state to prevent leaking
+      // a solved board or an official run to the signed-out local state.
+      try {
+        localStorage.removeItem(`dailyFloodProgress:${state.dateStr}`);
+      } catch (e) {
+        // ignore
+      }
+      // Regenerate fresh daily board
+      return createInitialState();
+
     default:
       return state;
   }
@@ -140,6 +152,11 @@ export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState);
   const { user, loading: authLoading, signIn, signOut } = useAuth();
   const leaderboard = useLeaderboard(state.dateStr, user);
+
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    dispatch({ type: 'SIGN_OUT_RESET' });
+  }, [signOut]);
 
   // Track whether we've already triggered auto-save for the current solve
   const autoSaveTriggered = useRef(false);
@@ -241,7 +258,7 @@ export default function App() {
           user={user}
           loading={authLoading}
           onSignIn={signIn}
-          onSignOut={signOut}
+          onSignOut={handleSignOut}
         />
 
         {/* Header */}
