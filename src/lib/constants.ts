@@ -1,8 +1,8 @@
 export const GRID_SIZE = 8;
 export const NUM_COLORS = 5;
 
-/** Reference epoch: 2024-01-01 UTC */
-export const EPOCH_DATE = new Date(Date.UTC(2024, 0, 1));
+/** Reference epoch: 2026-05-07 UTC (launch day, Puzzle #1) */
+export const EPOCH_DATE = new Date(Date.UTC(2026, 4, 7));
 
 export interface GameColor {
   id: number;

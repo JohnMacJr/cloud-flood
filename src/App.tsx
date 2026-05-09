@@ -30,7 +30,8 @@ type GameAction =
   | { type: 'RESET' }
   | { type: 'CLOSE_MODAL' }
   | { type: 'MARK_SAVED' }
-  | { type: 'LOCK_COMPLETED'; moves: number };
+  | { type: 'LOCK_COMPLETED'; moves: number }
+  | { type: 'NEW_DAY' };
 
 function createInitialState(): GameState {
   const dateStr = getTodayDateStr();
@@ -97,6 +98,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         moveCount: action.moves,
       };
 
+    case 'NEW_DAY':
+      // UTC date changed — generate fresh puzzle
+      return createInitialState();
+
     default:
       return state;
   }
@@ -114,6 +119,19 @@ export default function App() {
 
   // Track whether we've already checked for an existing score on this session
   const existingScoreChecked = useRef(false);
+
+  // ── UTC midnight rollover detection ──
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentDate = getTodayDateStr();
+      if (currentDate !== state.dateStr) {
+        autoSaveTriggered.current = false;
+        existingScoreChecked.current = false;
+        dispatch({ type: 'NEW_DAY' });
+      }
+    }, 30_000); // check every 30 seconds
+    return () => clearInterval(interval);
+  }, [state.dateStr]);
 
   const handlePickColor = useCallback(
     (color: number) => dispatch({ type: 'MOVE', color }),
