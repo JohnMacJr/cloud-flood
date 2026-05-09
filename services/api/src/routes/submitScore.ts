@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 import { verifyAuth } from '../middleware/auth.js';
@@ -93,14 +92,14 @@ submitScoreRouter.post('/api/submit-score', verifyAuth, async (req, res) => {
 
   console.log(`[submit-score] Validated: uid=${uid}, ${validMoveCount} moves`);
 
-  // ── 6. Get user profile from Firebase Auth ───────────
+  // ── 6. Get user profile from Firestore ───────────────
   let displayName = 'Anonymous';
-  let photoURL: string | null = null;
 
   try {
-    const userRecord = await getAuth().getUser(uid);
-    displayName = userRecord.displayName ?? userRecord.email ?? 'Anonymous';
-    photoURL = userRecord.photoURL ?? null;
+    const userDoc = await db.doc(`users/${uid}`).get();
+    if (userDoc.exists) {
+      displayName = userDoc.data()?.nickname || 'Anonymous';
+    }
   } catch {
     console.warn(`[submit-score] Could not fetch user profile for uid=${uid}, using defaults`);
   }
@@ -111,7 +110,6 @@ submitScoreRouter.post('/api/submit-score', verifyAuth, async (req, res) => {
   const leaderboardData = {
     uid,
     displayName,
-    photoURL,
     moves: validMoveCount,
     solvedAt: FieldValue.serverTimestamp(),
   };

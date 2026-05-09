@@ -23,7 +23,7 @@ describe('Shared game logic (server-side)', () => {
     expect(board1.flat().join(',')).not.toBe(board2.flat().join(','));
   });
 
-  it('generated board is 8×8', () => {
+  it('generated board is 9×9', () => {
     const board = generateBoard('2026-01-15');
     expect(board.length).toBe(GRID_SIZE);
     for (const row of board) {

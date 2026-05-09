@@ -5,19 +5,21 @@ import {
   isSolved,
   getCapturedColor,
 } from '../src/lib/floodFill';
+import { GRID_SIZE } from '../src/lib/constants';
 
 describe('Flood Fill', () => {
   it('captures adjacent matching tiles', () => {
     // Board where top-left 2×2 is color 0
     const board = [
-      [0, 0, 1, 1, 2, 2, 3, 3],
-      [0, 0, 1, 1, 2, 2, 3, 3],
-      [1, 1, 2, 2, 3, 3, 4, 4],
-      [1, 1, 2, 2, 3, 3, 4, 4],
-      [2, 2, 3, 3, 4, 4, 0, 0],
-      [2, 2, 3, 3, 4, 4, 0, 0],
-      [3, 3, 4, 4, 0, 0, 1, 1],
-      [3, 3, 4, 4, 0, 0, 1, 1],
+      [0, 0, 1, 1, 2, 2, 3, 3, 3],
+      [0, 0, 1, 1, 2, 2, 3, 3, 3],
+      [1, 1, 2, 2, 3, 3, 4, 4, 4],
+      [1, 1, 2, 2, 3, 3, 4, 4, 4],
+      [2, 2, 3, 3, 4, 4, 0, 0, 0],
+      [2, 2, 3, 3, 4, 4, 0, 0, 0],
+      [3, 3, 4, 4, 0, 0, 1, 1, 1],
+      [3, 3, 4, 4, 0, 0, 1, 1, 1],
+      [3, 3, 4, 4, 0, 0, 1, 1, 1],
     ];
 
     const region = getFloodRegion(board, 0, 0);
@@ -32,14 +34,15 @@ describe('Flood Fill', () => {
     // Color 0 at (0,0), color 1 at (0,1) and (0,2)
     // After choosing color 1, the region should include (0,0), (0,1), (0,2)
     const board = [
-      [0, 1, 1, 2, 2, 2, 2, 2],
-      [2, 2, 2, 2, 2, 2, 2, 2],
-      [2, 2, 2, 2, 2, 2, 2, 2],
-      [2, 2, 2, 2, 2, 2, 2, 2],
-      [2, 2, 2, 2, 2, 2, 2, 2],
-      [2, 2, 2, 2, 2, 2, 2, 2],
-      [2, 2, 2, 2, 2, 2, 2, 2],
-      [2, 2, 2, 2, 2, 2, 2, 2],
+      [0, 1, 1, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2],
     ];
 
     const newBoard = applyMove(board, 1);
@@ -55,14 +58,15 @@ describe('Flood Fill', () => {
 
   it('selecting the current color does not change the board', () => {
     const board = [
-      [0, 1, 2, 3, 4, 0, 1, 2],
-      [1, 2, 3, 4, 0, 1, 2, 3],
-      [2, 3, 4, 0, 1, 2, 3, 4],
-      [3, 4, 0, 1, 2, 3, 4, 0],
-      [4, 0, 1, 2, 3, 4, 0, 1],
-      [0, 1, 2, 3, 4, 0, 1, 2],
-      [1, 2, 3, 4, 0, 1, 2, 3],
-      [2, 3, 4, 0, 1, 2, 3, 4],
+      [0, 1, 2, 3, 4, 0, 1, 2, 3],
+      [1, 2, 3, 4, 0, 1, 2, 3, 4],
+      [2, 3, 4, 0, 1, 2, 3, 4, 0],
+      [3, 4, 0, 1, 2, 3, 4, 0, 1],
+      [4, 0, 1, 2, 3, 4, 0, 1, 2],
+      [0, 1, 2, 3, 4, 0, 1, 2, 3],
+      [1, 2, 3, 4, 0, 1, 2, 3, 4],
+      [2, 3, 4, 0, 1, 2, 3, 4, 0],
+      [3, 4, 0, 1, 2, 3, 4, 0, 1],
     ];
 
     const currentColor = getCapturedColor(board);
@@ -74,13 +78,13 @@ describe('Flood Fill', () => {
   });
 
   it('solved-state detection works on a uniform board', () => {
-    const board = Array.from({ length: 8 }, () => Array(8).fill(3));
+    const board = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(3));
     expect(isSolved(board)).toBe(true);
   });
 
   it('solved-state detection returns false on a non-uniform board', () => {
-    const board = Array.from({ length: 8 }, () => Array(8).fill(3));
-    board[7][7] = 1;
+    const board = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(3));
+    board[GRID_SIZE - 1][GRID_SIZE - 1] = 1;
     expect(isSolved(board)).toBe(false);
   });
 });

@@ -7,8 +7,8 @@ import { useLeaderboard } from './hooks/useLeaderboard';
 import Board from './components/Board';
 import ColorPicker from './components/ColorPicker';
 import GameHeader from './components/GameHeader';
-import Controls from './components/Controls';
 import CompletionModal from './components/CompletionModal';
+import AuthBar from './components/AuthBar';
 
 import Leaderboard from './components/Leaderboard';
 
@@ -36,16 +36,40 @@ type GameAction =
 
 function createInitialState(): GameState {
   const dateStr = getTodayDateStr();
-  const board = generateBoard(dateStr);
+  let board = generateBoard(dateStr);
+  let moveHistory: number[] = [];
+  let moveCount = 0;
+
+  try {
+    const saved = localStorage.getItem(`dailyFloodProgress:${dateStr}`);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed.moveHistory)) {
+        moveHistory = parsed.moveHistory;
+        for (const color of moveHistory) {
+          const currentColor = getCapturedColor(board);
+          if (color !== currentColor) {
+            board = applyMove(board, color);
+            moveCount++;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load local progress', e);
+  }
+
+  const solved = isSolved(board);
+
   return {
     dateStr,
     puzzleNumber: getPuzzleNumber(dateStr),
-    initialBoard: board,
+    initialBoard: generateBoard(dateStr),
     board,
-    moveCount: 0,
-    moveHistory: [],
-    solved: false,
-    showModal: false,
+    moveCount,
+    moveHistory,
+    solved,
+    showModal: false, // Don't auto-show modal on initial load, even if solved locally
     scoreSaved: false,
   };
 }
@@ -63,7 +87,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newBoard = applyMove(state.board, action.color);
       const solved = isSolved(newBoard);
 
-      return {
+      const newState = {
         ...state,
         board: newBoard,
         moveCount: state.moveCount + 1,
@@ -72,18 +96,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         showModal: solved,
         scoreSaved: solved ? false : state.scoreSaved,
       };
-    }
 
-    case 'RESET': {
-      return {
-        ...state,
-        board: state.initialBoard,
-        moveCount: 0,
-        moveHistory: [],
-        solved: false,
-        showModal: false,
-        scoreSaved: false,
-      };
+      try {
+        localStorage.setItem(
+          `dailyFloodProgress:${state.dateStr}`,
+          JSON.stringify({ moveHistory: newState.moveHistory })
+        );
+      } catch (e) {
+        // ignore
+      }
+
+      return newState;
     }
 
     case 'CLOSE_MODAL':
@@ -98,7 +121,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         solved: true,
         scoreSaved: true,
-        showModal: false,
+        showModal: state.solved ? state.showModal : false,
         moveCount: action.moves,
       };
 
@@ -115,7 +138,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState);
-  const { user, signIn } = useAuth();
+  const { user, loading: authLoading, signIn, signOut } = useAuth();
   const leaderboard = useLeaderboard(state.dateStr, user);
 
   // Track whether we've already triggered auto-save for the current solve
@@ -142,10 +165,6 @@ export default function App() {
     [],
   );
 
-  const handleReset = useCallback(() => {
-    autoSaveTriggered.current = false;
-    dispatch({ type: 'RESET' });
-  }, []);
 
   const handleCloseModal = useCallback(() => dispatch({ type: 'CLOSE_MODAL' }), []);
 
@@ -214,8 +233,16 @@ export default function App() {
   const alreadyPlayed = Boolean(user && leaderboard.userScore && state.scoreSaved);
 
   return (
-    <div className="min-h-dvh bg-[#f0eeeb] flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
+
+        {/* Auth Bar */}
+        <AuthBar
+          user={user}
+          loading={authLoading}
+          onSignIn={signIn}
+          onSignOut={signOut}
+        />
 
         {/* Header */}
         <GameHeader
@@ -236,7 +263,7 @@ export default function App() {
         )}
 
         {/* Board */}
-        <div className="bg-white rounded-2xl p-3 border border-gray-200">
+        <div className="bg-white/80 backdrop-blur-xl rounded-[20px] p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50">
           <Board board={state.board} />
         </div>
 
@@ -249,13 +276,7 @@ export default function App() {
           />
         )}
 
-        {/* Controls — hidden if already played */}
-        {!alreadyPlayed && (
-          <Controls
-            onReset={handleReset}
-            disabled={state.solved}
-          />
-        )}
+
 
         {/* Leaderboard */}
         <Leaderboard

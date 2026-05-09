@@ -1,4 +1,4 @@
-export const GRID_SIZE = 8;
+export const GRID_SIZE = 9;
 export const NUM_COLORS = 5;
 
 /** Reference epoch: 2026-05-07 UTC (launch day, Puzzle #1) */

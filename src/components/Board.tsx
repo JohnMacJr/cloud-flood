@@ -19,7 +19,7 @@ export default function Board({ board }: BoardProps) {
           return (
             <div
               key={`${r}-${c}`}
-              className="rounded-[3px] transition-colors duration-200 ease-out"
+              className="rounded-[4px] transition-colors duration-200 ease-out shadow-[inset_0_-1px_2px_rgba(0,0,0,0.1)]"
               style={{ backgroundColor: color.hex }}
               aria-label={`Row ${r + 1}, Column ${c + 1}: ${color.name}`}
             />

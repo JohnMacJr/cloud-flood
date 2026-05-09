@@ -19,7 +19,7 @@ describe('Board Generation', () => {
     expect(flat1).not.toBe(flat2);
   });
 
-  it('generated board is 8×8', () => {
+  it('generated board is 9×9', () => {
     const board = generateBoard('2026-01-15');
     expect(board.length).toBe(GRID_SIZE);
     for (const row of board) {

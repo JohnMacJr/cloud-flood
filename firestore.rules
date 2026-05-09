@@ -22,6 +22,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── User profile ───────────────────────────────────────
+    // Path: users/{uid}
+    //
+    // Reads:  Only the authenticated owner can read their profile.
+    // Writes: Only the authenticated owner can create/update their profile.
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
     // ── User score history ─────────────────────────────
     // Path: users/{uid}/scores/{dateKey}
     //

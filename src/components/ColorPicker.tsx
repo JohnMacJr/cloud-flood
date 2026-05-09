@@ -22,13 +22,13 @@ export default function ColorPicker({
             onClick={() => onPickColor(color.id)}
             disabled={disabled || isCurrent}
             className={`
-              w-12 h-12 rounded-lg
-              transition-all duration-150 ease-out
-              border-2 cursor-pointer
+              w-12 h-12 rounded-full
+              transition-all duration-300 ease-out
+              border-[3px] shadow-sm cursor-pointer
               ${
                 isCurrent
-                  ? 'border-gray-300 opacity-35 scale-90 cursor-not-allowed'
-                  : 'border-transparent hover:scale-110 active:scale-95'
+                  ? 'border-transparent opacity-40 scale-90 cursor-not-allowed shadow-none'
+                  : 'border-white hover:scale-110 active:scale-95 hover:shadow-md'
               }
             `}
             style={{ backgroundColor: color.hex }}

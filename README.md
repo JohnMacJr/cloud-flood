@@ -1,12 +1,12 @@
 # Daily Flood
 
-A daily color-flood puzzle game. Capture the entire 8×8 board in as few moves as possible!
+A daily color-flood puzzle game. Capture the entire 9×9 board in as few moves as possible!
 
 Everyone gets the same puzzle each day — come back tomorrow for a new one.
 
 ## Features
 
-- 🎨 8×8 board with 5 colorblind-friendly colors
+- 🎨 9×9 board with 5 colorblind-friendly colors
 - 🎯 Deterministic daily puzzle (same puzzle for everyone)
 - 🔐 Google sign-in via Firebase Auth
 - 🏆 Daily leaderboard powered by Firestore

@@ -1,8 +1,8 @@
-import type { User } from 'firebase/auth';
+import type { AppUser } from '../hooks/useAuth';
 import type { LeaderboardEntry, SaveResult } from '../lib/leaderboard';
 
 interface LeaderboardProps {
-  user: User | null;
+  user: AppUser | null;
   scores: LeaderboardEntry[];
   loading: boolean;
   userScore: LeaderboardEntry | null;
@@ -59,7 +59,7 @@ export default function Leaderboard({
   }
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-gray-200 space-y-4 max-w-sm mx-auto">
+    <div className="bg-white/80 backdrop-blur-xl rounded-[20px] p-5 border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 max-w-sm mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
@@ -152,21 +152,6 @@ export default function Leaderboard({
                   {medal || rank}
                 </span>
 
-                {/* Avatar */}
-                {entry.photoURL ? (
-                  <img
-                    src={entry.photoURL}
-                    alt=""
-                    className="w-7 h-7 rounded-full flex-shrink-0"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs text-gray-400">
-                      {(entry.displayName || '?')[0].toUpperCase()}
-                    </span>
-                  </div>
-                )}
 
                 {/* Name */}
                 <span

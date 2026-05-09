@@ -3,12 +3,19 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   signOut as firebaseSignOut,
-  type User,
 } from 'firebase/auth';
-import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, googleProvider, isFirebaseConfigured } from '../lib/firebase';
+import { generateNickname } from '../lib/nameGenerator';
+
+export interface AppUser {
+  uid: string;
+  email: string | null;
+  nickname: string;
+}
 
 export interface AuthState {
-  user: User | null;
+  user: AppUser | null;
   loading: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -21,7 +28,7 @@ export interface AuthState {
  * If Firebase is not configured, returns a no-op state (never loading, no user).
  */
 export function useAuth(): AuthState {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
 
   useEffect(() => {
@@ -30,8 +37,47 @@ export function useAuth(): AuthState {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          if (!db) {
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              nickname: 'LocalPlayer',
+            });
+            return;
+          }
+
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          let userDoc = await getDoc(userDocRef);
+          
+          if (!userDoc.exists()) {
+            const nickname = generateNickname();
+            await setDoc(userDocRef, {
+              uid: firebaseUser.uid,
+              nickname,
+              createdAt: serverTimestamp(),
+            });
+            userDoc = await getDoc(userDocRef); // re-fetch to be safe
+          }
+          
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            nickname: userDoc.data()?.nickname || 'Anonymous',
+          });
+        } catch (err) {
+          console.error('Error fetching/creating user profile:', err);
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            nickname: 'Anonymous',
+          });
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return unsubscribe;

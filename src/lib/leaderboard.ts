@@ -10,14 +10,13 @@ import {
   type Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { User } from 'firebase/auth';
+import type { AppUser } from '../hooks/useAuth';
 
 // ── Types ──────────────────────────────────────────────
 
 export interface LeaderboardEntry {
   uid: string;
   displayName: string;
-  photoURL: string | null;
   moves: number;
   solvedAt: Timestamp | null;
 }
@@ -52,7 +51,7 @@ export type SaveResult = 'saved' | 'duplicate' | 'error';
  * by Firestore security rules.
  */
 export async function submitScore(
-  user: User,
+  _user: AppUser,
   dateKey: string,
   moveHistory: number[],
 ): Promise<SaveResult> {
@@ -63,7 +62,8 @@ export async function submitScore(
       return 'error';
     }
 
-    const token = await user.getIdToken();
+    const authModule = await import('firebase/auth');
+    const token = await authModule.getAuth().currentUser?.getIdToken();
 
     const res = await fetch(`${apiBase}/api/submit-score`, {
       method: 'POST',

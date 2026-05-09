@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { generateShareText } from '../lib/puzzle';
+import { GRID_SIZE, NUM_COLORS } from '../lib/constants';
 
 type SaveStatus = 'sign-in' | 'pending' | 'saved' | 'duplicate' | 'error' | null;
 
@@ -90,7 +91,7 @@ export default function CompletionModal({
           <p className="text-3xl font-extrabold text-gray-900 tabular-nums">
             {moveCount} <span className="text-lg font-normal text-gray-400">moves</span>
           </p>
-          <p className="text-gray-300 text-xs">8×8 · 5 colors</p>
+          <p className="text-gray-300 text-xs">{GRID_SIZE}×{GRID_SIZE} · {NUM_COLORS} colors</p>
         </div>
 
         {/* Save status */}

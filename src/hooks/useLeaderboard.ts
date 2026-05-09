@@ -8,7 +8,7 @@ import {
   type LeaderboardEntry,
   type SaveResult,
 } from '../lib/leaderboard';
-import type { User } from 'firebase/auth';
+import type { AppUser } from './useAuth';
 
 export interface LeaderboardState {
   scores: LeaderboardEntry[];
@@ -18,7 +18,7 @@ export interface LeaderboardState {
   userStats: { totalCompleted: number; bestScore: number | null } | null;
   saveStatus: SaveResult | 'pending' | null;
   saveScore: (
-    user: User,
+    user: AppUser,
     dateKey: string,
     moveHistory: number[],
   ) => Promise<void>;
@@ -33,7 +33,7 @@ export interface LeaderboardState {
  */
 export function useLeaderboard(
   dateKey: string,
-  user: User | null,
+  user: AppUser | null,
 ): LeaderboardState {
   const [scores, setScores] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -107,7 +107,7 @@ export function useLeaderboard(
   // ── Score submission (via Cloud Run API) ─────────────
   const saveScore = useCallback(
     async (
-      u: User,
+      u: AppUser,
       dk: string,
       moveHistory: number[],
     ) => {
