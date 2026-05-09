@@ -20,8 +20,7 @@ export interface LeaderboardState {
   saveScore: (
     user: User,
     dateKey: string,
-    puzzleNumber: number,
-    moves: number,
+    moveHistory: number[],
   ) => Promise<void>;
 }
 
@@ -105,17 +104,16 @@ export function useLeaderboard(
     getUserStats(user.uid).then(setUserStats);
   }, [user, dateKey]);
 
-  // ── Score submission ─────────────────────────────────
+  // ── Score submission (via Cloud Run API) ─────────────
   const saveScore = useCallback(
     async (
       u: User,
       dk: string,
-      puzzleNumber: number,
-      moves: number,
+      moveHistory: number[],
     ) => {
       if (!isFirebaseConfigured) return;
       setSaveStatus('pending');
-      const result = await submitScore(u, dk, puzzleNumber, moves);
+      const result = await submitScore(u, dk, moveHistory);
       setSaveStatus(result);
 
       // Refresh user stats after saving

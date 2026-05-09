@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { generateShareText } from '../lib/puzzle';
 
-type SaveStatus = 'sign-in' | 'pending' | 'saved' | 'kept' | 'error' | null;
+type SaveStatus = 'sign-in' | 'pending' | 'saved' | 'duplicate' | 'error' | null;
 
 interface CompletionModalProps {
   puzzleNumber: number;
@@ -41,10 +41,10 @@ function SaveStatusDisplay({
           ✓ Score saved to leaderboard
         </p>
       );
-    case 'kept':
+    case 'duplicate':
       return (
         <p className="text-sm text-amber-600 font-medium animate-fade-in">
-          ✓ Best score kept
+          ✓ Score already submitted
         </p>
       );
     case 'error':

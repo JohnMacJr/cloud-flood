@@ -18,7 +18,7 @@ function SaveStatusBadge({ status }: { status: SaveResult | 'pending' | null }) 
   const config = {
     pending: { text: 'Saving…', color: 'text-gray-400' },
     saved: { text: '✓ Score saved', color: 'text-emerald-600' },
-    kept: { text: '✓ Best score kept', color: 'text-amber-600' },
+    duplicate: { text: 'Already completed today', color: 'text-amber-600' },
     error: { text: '✗ Save failed', color: 'text-red-500' },
   }[status];
 

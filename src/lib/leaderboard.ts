@@ -1,13 +1,11 @@
 import {
   doc,
-  setDoc,
   getDoc,
   getDocs,
   collection,
   query,
   orderBy,
   limit,
-  serverTimestamp,
   type Firestore,
   type Timestamp,
 } from 'firebase/firestore';
@@ -41,59 +39,54 @@ function leaderboardScoreRef(dateKey: string, uid: string) {
   return doc(requireDb(), 'leaderboards', dateKey, 'scores', uid);
 }
 
-function userScoreRef(uid: string, dateKey: string) {
-  return doc(requireDb(), 'users', uid, 'scores', dateKey);
-}
+// ── Write (via Cloud Run API) ──────────────────────────
 
-// ── Write ──────────────────────────────────────────────
-
-export type SaveResult = 'saved' | 'kept' | 'error';
+export type SaveResult = 'saved' | 'duplicate' | 'error';
 
 /**
- * Save the user's score for today.
- * Only updates if the new score is strictly better (fewer moves).
- * Writes to both `leaderboards/{dateKey}/scores/{uid}` and
- * `users/{uid}/scores/{dateKey}`.
+ * Submit the user's move sequence to the Cloud Run API for validation.
+ * The backend replays the moves server-side, verifies the solution,
+ * and writes the verified score to Firestore via Admin SDK.
+ *
+ * Does NOT write to Firestore directly — client writes are denied
+ * by Firestore security rules.
  */
 export async function submitScore(
   user: User,
   dateKey: string,
-  puzzleNumber: number,
-  moves: number,
+  moveHistory: number[],
 ): Promise<SaveResult> {
   try {
-    // Check for existing score
-    const existingDoc = await getDoc(leaderboardScoreRef(dateKey, user.uid));
-    if (existingDoc.exists()) {
-      const existing = existingDoc.data() as LeaderboardEntry;
-      if (existing.moves <= moves) {
-        return 'kept'; // existing score is same or better
-      }
+    const apiBase = import.meta.env.VITE_API_BASE_URL;
+    if (!apiBase) {
+      console.error('VITE_API_BASE_URL is not configured');
+      return 'error';
     }
 
-    const displayName = user.displayName || user.email || 'Anonymous';
+    const token = await user.getIdToken();
 
-    const leaderboardData: LeaderboardEntry = {
-      uid: user.uid,
-      displayName,
-      photoURL: user.photoURL,
-      moves,
-      solvedAt: serverTimestamp() as unknown as Timestamp,
-    };
+    const res = await fetch(`${apiBase}/api/submit-score`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ dateKey, moves: moveHistory }),
+    });
 
-    const userScoreData: UserScoreEntry = {
-      moves,
-      puzzleNumber,
-      solvedAt: serverTimestamp() as unknown as Timestamp,
-    };
+    if (res.status === 201) {
+      return 'saved';
+    }
 
-    // Write to both collections
-    await Promise.all([
-      setDoc(leaderboardScoreRef(dateKey, user.uid), leaderboardData),
-      setDoc(userScoreRef(user.uid, dateKey), userScoreData),
-    ]);
+    if (res.status === 409) {
+      // Already submitted for this date
+      return 'duplicate';
+    }
 
-    return 'saved';
+    // Any other error
+    const body = await res.json().catch(() => ({}));
+    console.error('Score submission failed:', res.status, body);
+    return 'error';
   } catch (error) {
     console.error('Failed to submit score:', error);
     return 'error';

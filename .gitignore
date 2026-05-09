@@ -21,6 +21,11 @@ dist-ssr
 .firebase/
 .firebaserc
 
+# Cloud Run API backend
+services/api/node_modules
+services/api/dist
+service-account-key.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

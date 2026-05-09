@@ -20,6 +20,7 @@ interface GameState {
   initialBoard: number[][];
   board: number[][];
   moveCount: number;
+  moveHistory: number[];
   solved: boolean;
   showModal: boolean;
   scoreSaved: boolean;
@@ -42,6 +43,7 @@ function createInitialState(): GameState {
     initialBoard: board,
     board,
     moveCount: 0,
+    moveHistory: [],
     solved: false,
     showModal: false,
     scoreSaved: false,
@@ -65,6 +67,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         board: newBoard,
         moveCount: state.moveCount + 1,
+        moveHistory: [...state.moveHistory, action.color],
         solved,
         showModal: solved,
         scoreSaved: solved ? false : state.scoreSaved,
@@ -76,6 +79,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         board: state.initialBoard,
         moveCount: 0,
+        moveHistory: [],
         solved: false,
         showModal: false,
         scoreSaved: false,
@@ -175,10 +179,10 @@ export default function App() {
     ) {
       autoSaveTriggered.current = true;
       leaderboard
-        .saveScore(user, state.dateStr, state.puzzleNumber, state.moveCount)
+        .saveScore(user, state.dateStr, state.moveHistory)
         .then(() => dispatch({ type: 'MARK_SAVED' }));
     }
-  }, [state.solved, user, state.scoreSaved, state.dateStr, state.puzzleNumber, state.moveCount, leaderboard]);
+  }, [state.solved, user, state.scoreSaved, state.dateStr, state.moveHistory, leaderboard]);
 
   // ── Post-sign-in recovery: save pending score ──
   useEffect(() => {
@@ -190,10 +194,10 @@ export default function App() {
     ) {
       autoSaveTriggered.current = true;
       leaderboard
-        .saveScore(user, state.dateStr, state.puzzleNumber, state.moveCount)
+        .saveScore(user, state.dateStr, state.moveHistory)
         .then(() => dispatch({ type: 'MARK_SAVED' }));
     }
-  }, [user, state.solved, state.scoreSaved, state.dateStr, state.puzzleNumber, state.moveCount, leaderboard]);
+  }, [user, state.solved, state.scoreSaved, state.dateStr, state.moveHistory, leaderboard]);
 
   // Save status message for the completion modal
   const saveStatusMessage = (() => {
@@ -201,7 +205,7 @@ export default function App() {
     if (!user) return 'sign-in' as const;
     if (leaderboard.saveStatus === 'pending') return 'pending' as const;
     if (leaderboard.saveStatus === 'saved') return 'saved' as const;
-    if (leaderboard.saveStatus === 'kept') return 'kept' as const;
+    if (leaderboard.saveStatus === 'duplicate') return 'duplicate' as const;
     if (leaderboard.saveStatus === 'error') return 'error' as const;
     return null;
   })();

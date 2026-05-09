@@ -10,6 +10,7 @@ Everyone gets the same puzzle each day — come back tomorrow for a new one.
 - 🎯 Deterministic daily puzzle (same puzzle for everyone)
 - 🔐 Google sign-in via Firebase Auth
 - 🏆 Daily leaderboard powered by Firestore
+- 🛡️ Server-side score validation via Cloud Run
 - 📊 Personal stats (total puzzles, best score)
 - 📋 Share your result
 - ⟲ Reset puzzle
@@ -25,6 +26,11 @@ Everyone gets the same puzzle each day — come back tomorrow for a new one.
 ### Install Dependencies
 
 ```bash
+# Frontend
+npm install
+
+# Backend
+cd services/api
 npm install
 ```
 
@@ -45,6 +51,7 @@ VITE_FIREBASE_PROJECT_ID=your-project-id
 VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
 VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
 3. In the Firebase Console, enable:
@@ -54,6 +61,11 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 ### Run Locally
 
 ```bash
+# Start the backend API
+cd services/api
+npm run dev
+
+# In another terminal, start the frontend
 npm run dev
 ```
 
@@ -62,16 +74,24 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 ### Run Tests
 
 ```bash
+# Frontend tests
+npm run test
+
+# Backend tests
+cd services/api
 npm run test
 ```
 
 ### Build for Production
 
 ```bash
+# Frontend
+npm run build
+
+# Backend
+cd services/api
 npm run build
 ```
-
-The output goes to the `dist/` directory.
 
 ---
 
@@ -83,6 +103,10 @@ The output goes to the `dist/` directory.
 npm run build
 firebase deploy --only hosting,firestore:rules
 ```
+
+### Deploy Cloud Run API
+
+See [docs/cloud-run.md](docs/cloud-run.md) for the full deployment guide.
 
 ### Deploy Firestore Rules Only
 
@@ -100,39 +124,64 @@ Your app will be live at `https://YOUR_PROJECT_ID.web.app`.
 
 ```
 cloud-flood/
-├── src/
-│   ├── lib/              # Pure game logic + Firebase services
-│   │   ├── boardGen.ts       # Deterministic board generation
-│   │   ├── constants.ts      # Grid size, colors, epoch
-│   │   ├── firebase.ts       # Firebase app/auth/db initialization
-│   │   ├── floodFill.ts      # Flood fill algorithm
-│   │   ├── leaderboard.ts    # Firestore read/write operations
-│   │   ├── puzzle.ts         # Puzzle number, date formatting
-│   │   └── seededRandom.ts   # Mulberry32 PRNG
-│   ├── hooks/             # Custom React hooks
-│   │   ├── useAuth.ts        # Firebase Auth state
-│   │   └── useLeaderboard.ts # Leaderboard subscription + stats
-│   ├── components/        # React UI components
-│   │   ├── AuthBar.tsx        # Sign-in/out bar
-│   │   ├── Board.tsx          # Game board grid
-│   │   ├── ColorPicker.tsx    # Color selection buttons
-│   │   ├── CompletionModal.tsx# Win modal with share + save status
-│   │   ├── Controls.tsx       # Reset button
-│   │   ├── GameHeader.tsx     # Title, date, move counter
-│   │   └── Leaderboard.tsx    # Leaderboard panel
-│   ├── App.tsx            # Main app with state management
-│   ├── main.tsx           # Entry point
-│   └── index.css          # Tailwind + custom styles
-├── tests/                 # Vitest test files
-├── docs/                  # Architecture documentation
-│   ├── architecture.md       # System design & data model
-│   └── security-plan.md      # Phase 1/2 security roadmap
-├── firebase.json          # Firebase Hosting + Firestore config
-├── firestore.rules        # Firestore security rules
-├── .env.example           # Environment variable template
-├── vite.config.ts         # Vite + Tailwind + Vitest config
-└── index.html             # HTML entry point
+├── src/                       # Frontend (React + TypeScript)
+│   ├── lib/                      # Pure game logic + Firebase services
+│   │   ├── boardGen.ts              # Deterministic board generation
+│   │   ├── constants.ts             # Grid size, colors, epoch
+│   │   ├── firebase.ts              # Firebase app/auth/db initialization
+│   │   ├── floodFill.ts             # Flood fill algorithm
+│   │   ├── leaderboard.ts           # Score submission (via Cloud Run API) + reads
+│   │   ├── puzzle.ts                # Puzzle number, date formatting
+│   │   └── seededRandom.ts          # Mulberry32 PRNG
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── useAuth.ts               # Firebase Auth state
+│   │   └── useLeaderboard.ts        # Leaderboard subscription + stats
+│   ├── components/               # React UI components
+│   │   ├── AuthBar.tsx              # Sign-in/out bar
+│   │   ├── Board.tsx                # Game board grid
+│   │   ├── ColorPicker.tsx          # Color selection buttons
+│   │   ├── CompletionModal.tsx      # Win modal with share + save status
+│   │   ├── Controls.tsx             # Reset button
+│   │   ├── GameHeader.tsx           # Title, date, move counter
+│   │   └── Leaderboard.tsx          # Leaderboard panel
+│   ├── App.tsx                   # Main app with state management
+│   ├── main.tsx                  # Entry point
+│   └── index.css                 # Tailwind + custom styles
+├── services/
+│   └── api/                      # Cloud Run backend (Express + TypeScript)
+│       ├── src/
+│       │   ├── shared/              # Duplicated pure game logic (see note below)
+│       │   │   ├── constants.ts
+│       │   │   ├── seededRandom.ts
+│       │   │   ├── boardGen.ts
+│       │   │   ├── floodFill.ts
+│       │   │   └── puzzle.ts
+│       │   ├── middleware/
+│       │   │   └── auth.ts          # Firebase ID token verification
+│       │   ├── routes/
+│       │   │   ├── health.ts        # GET /health
+│       │   │   ├── submitScore.ts   # POST /api/submit-score
+│       │   │   ├── leaderboard.ts   # GET /api/leaderboard/today
+│       │   │   └── me.ts           # GET /api/me/today
+│       │   └── index.ts            # Express entry point
+│       ├── tests/
+│       │   └── validation.test.ts   # Backend validation tests
+│       ├── Dockerfile               # Cloud Run container
+│       ├── package.json
+│       └── tsconfig.json
+├── tests/                        # Frontend Vitest test files
+├── docs/                         # Documentation
+│   ├── architecture.md              # System design & data model
+│   ├── cloud-run.md                 # Cloud Run deployment guide
+│   └── security-plan.md            # Security model
+├── firebase.json                 # Firebase Hosting + Firestore config
+├── firestore.rules               # Firestore security rules
+├── .env.example                  # Environment variable template
+├── vite.config.ts                # Vite + Tailwind + Vitest config
+└── index.html                    # HTML entry point
 ```
+
+> **Note on shared game logic:** The backend (`services/api/src/shared/`) duplicates pure game logic from `src/lib/`. These files have no browser or Vite dependencies and are safe to copy. Future cleanup: extract into a shared `packages/game-logic` workspace package. See [docs/cloud-run.md](docs/cloud-run.md) for details.
 
 ## Architecture
 
@@ -140,7 +189,11 @@ See [docs/architecture.md](docs/architecture.md) for the full cloud architecture
 
 ## Security
 
-See [docs/security-plan.md](docs/security-plan.md) for the security model, including Phase 1 limitations and the Phase 2 Cloud Run migration plan.
+See [docs/security-plan.md](docs/security-plan.md) for the security model.
+
+## Cloud Run
+
+See [docs/cloud-run.md](docs/cloud-run.md) for the Cloud Run deployment guide.
 
 ## Roadmap
 
@@ -149,7 +202,8 @@ See [docs/security-plan.md](docs/security-plan.md) for the security model, inclu
 - [x] Firebase Auth (Google sign-in)
 - [x] Firestore leaderboard
 - [x] User score persistence & stats
-- [ ] Cloud Run backend (server-side score validation)
+- [x] Cloud Run backend (server-side score validation)
+- [ ] Shared game logic package extraction
 - [ ] Streak tracking
 - [ ] Additional game modes
 

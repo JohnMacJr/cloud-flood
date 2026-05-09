@@ -5,29 +5,35 @@ service cloud.firestore {
 
     // ── Leaderboard scores ─────────────────────────────
     // Path: leaderboards/{dateKey}/scores/{uid}
+    //
+    // Reads:  Any authenticated user can view leaderboard scores.
+    // Writes: DENIED for all client-side requests.
+    //
+    // Score writes go through the Cloud Run API, which uses
+    // the Firebase Admin SDK. The Admin SDK bypasses these
+    // security rules entirely via IAM service account
+    // permissions — it does not go through the rules engine.
+    //
+    // This means only the Cloud Run service account can
+    // create/update score documents, preventing clients from
+    // fabricating or tampering with scores.
     match /leaderboards/{dateKey}/scores/{uid} {
-      // Only authenticated users can read leaderboard scores
       allow read: if request.auth != null;
-
-      // Only the authenticated owner can write their own score
-      allow write: if request.auth != null
-                   && request.auth.uid == uid
-                   && request.resource.data.moves is int
-                   && request.resource.data.moves > 0;
+      allow write: if false;
     }
 
     // ── User score history ─────────────────────────────
     // Path: users/{uid}/scores/{dateKey}
+    //
+    // Reads:  Only the authenticated owner can read their own scores.
+    // Writes: DENIED for all client-side requests (same as above).
+    //
+    // The Cloud Run API writes to this path using the Admin SDK
+    // after validating the user's move sequence server-side.
     match /users/{uid}/scores/{dateKey} {
-      // Only the owner can read their own scores
       allow read: if request.auth != null
                   && request.auth.uid == uid;
-
-      // Only the owner can write their own scores
-      allow write: if request.auth != null
-                   && request.auth.uid == uid
-                   && request.resource.data.moves is int
-                   && request.resource.data.moves > 0;
+      allow write: if false;
     }
   }
 }
