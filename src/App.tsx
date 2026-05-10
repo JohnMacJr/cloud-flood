@@ -312,6 +312,7 @@ export default function App() {
           <CompletionModal
             puzzleNumber={state.puzzleNumber}
             moveCount={state.moveCount}
+            moveHistory={state.moveHistory}
             onClose={handleCloseModal}
             saveStatusMessage={saveStatusMessage}
             onSignIn={signIn}

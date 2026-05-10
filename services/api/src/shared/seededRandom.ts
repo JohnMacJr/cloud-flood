@@ -22,7 +22,7 @@ export function dateToSeed(dateStr: string): number {
  * Returns a function that produces the next pseudo-random float in [0, 1).
  */
 export function createRng(seed: number): () => number {
-  let state = seed | 0;
+  let state = seed >>> 0;
   return () => {
     state = (state + 0x6d2b79f5) | 0;
     let t = Math.imul(state ^ (state >>> 15), 1 | state);

@@ -16,6 +16,11 @@
 
 <body>
   <div id="root"></div>
+  <script>
+    window.addEventListener('error', (event) => {
+      document.body.innerHTML = '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:20px;"><pre>' + event.error.stack + '</pre></div>';
+    });
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

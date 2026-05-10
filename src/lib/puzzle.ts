@@ -1,4 +1,4 @@
-import { EPOCH_DATE, GRID_SIZE, NUM_COLORS } from './constants';
+import { EPOCH_DATE } from './constants';
 
 /**
  * Returns the current UTC date as YYYY-MM-DD.
@@ -41,12 +41,30 @@ export function formatDate(dateStr: string): string {
 export function generateShareText(
   puzzleNumber: number,
   moves: number,
+  moveHistory: number[],
 ): string {
+  const EMOJI_MAP: Record<number, string> = {
+    0: '🟥',
+    1: '🟦',
+    2: '🟩',
+    3: '🟨',
+    4: '🟪',
+  };
+
+  let emojiGrid = '';
+  for (let i = 0; i < moveHistory.length; i++) {
+    emojiGrid += EMOJI_MAP[moveHistory[i]] || '⬛';
+    if ((i + 1) % 5 === 0 && i !== moveHistory.length - 1) {
+      emojiGrid += '\n';
+    }
+  }
+
   return [
     `Daily Flood #${puzzleNumber}`,
     `Solved in ${moves} moves`,
-    `${GRID_SIZE}×${GRID_SIZE} · ${NUM_COLORS} colors`,
     '',
-    'https://dailyflood.game',
+    emojiGrid,
+    '',
+    'https://cloud-flood.web.app/',
   ].join('\n');
 }

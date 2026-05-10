@@ -37,7 +37,11 @@ export function useLeaderboard(
 ): LeaderboardState {
   const [scores, setScores] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userScore, setUserScore] = useState<LeaderboardEntry | null>(null);
+  const [userScoreData, setUserScoreData] = useState<{
+    score: LeaderboardEntry | null;
+    dateKey: string;
+    uid: string | undefined;
+  }>({ score: null, dateKey, uid: user?.uid });
   const [userStats, setUserStats] = useState<{
     totalCompleted: number;
     bestScore: number | null;
@@ -53,7 +57,7 @@ export function useLeaderboard(
     if (!user || !db || !isFirebaseConfigured) {
       setScores([]);
       setLoading(false);
-      setUserScore(null);
+      setUserScoreData({ score: null, dateKey, uid: user?.uid });
       setUserStats(null);
       return;
     }
@@ -75,7 +79,7 @@ export function useLeaderboard(
 
         // Update user's own score from the snapshot
         const own = entries.find((e) => e.uid === user.uid);
-        if (own) setUserScore(own);
+        if (own) setUserScoreData({ score: own, dateKey, uid: user.uid });
       },
       (error) => {
         console.error('Leaderboard subscription error:', error);
@@ -89,15 +93,17 @@ export function useLeaderboard(
   // ── Load user's score + stats when user changes ──
   useEffect(() => {
     if (!user || !isFirebaseConfigured) {
-      setUserScore(null);
+      setUserScoreData({ score: null, dateKey, uid: user?.uid });
       setUserStats(null);
       setSaveStatus(null);
       return;
     }
 
+    setSaveStatus(null);
+
     // Fetch the user's score for today (may not be in top 10)
     getUserTodayScore(user.uid, dateKey).then((score) => {
-      if (score) setUserScore(score);
+      setUserScoreData({ score: score || null, dateKey, uid: user.uid });
     });
 
     // Fetch aggregate stats
@@ -121,11 +127,17 @@ export function useLeaderboard(
         const updated = await getUserStats(u.uid);
         setUserStats(updated);
         const score = await getUserTodayScore(u.uid, dk);
-        if (score) setUserScore(score);
+        if (score) setUserScoreData({ score, dateKey: dk, uid: u.uid });
       }
     },
     [],
   );
+
+  // Derived userScore matching the active date and user
+  const userScore =
+    userScoreData.dateKey === dateKey && userScoreData.uid === user?.uid
+      ? userScoreData.score
+      : null;
 
   // ── Compute user rank ────────────────────────────────
   const userRank = (() => {

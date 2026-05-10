@@ -7,6 +7,7 @@ type SaveStatus = 'sign-in' | 'pending' | 'saved' | 'duplicate' | 'error' | null
 interface CompletionModalProps {
   puzzleNumber: number;
   moveCount: number;
+  moveHistory: number[];
   onClose: () => void;
   saveStatusMessage: SaveStatus;
   onSignIn: () => void;
@@ -62,6 +63,7 @@ function SaveStatusDisplay({
 export default function CompletionModal({
   puzzleNumber,
   moveCount,
+  moveHistory,
   onClose,
   saveStatusMessage,
   onSignIn,
@@ -69,7 +71,7 @@ export default function CompletionModal({
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const text = generateShareText(puzzleNumber, moveCount);
+    const text = generateShareText(puzzleNumber, moveCount, moveHistory);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
