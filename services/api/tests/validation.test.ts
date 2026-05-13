@@ -6,7 +6,7 @@ import {
   isSolved,
 } from '../src/shared/floodFill.js';
 import { GRID_SIZE, NUM_COLORS } from '../src/shared/constants.js';
-import { getTodayDateStr, getPuzzleNumber } from '../src/shared/puzzle.js';
+import { getGameDateKey, getPuzzleNumber } from '../src/shared/puzzle.js';
 
 // ── Shared logic consistency ───────────────────────────
 
@@ -41,8 +41,8 @@ describe('Shared game logic (server-side)', () => {
     }
   });
 
-  it('getTodayDateStr returns YYYY-MM-DD format', () => {
-    const dateStr = getTodayDateStr();
+  it('getGameDateKey returns YYYY-MM-DD format', () => {
+    const dateStr = getGameDateKey();
     expect(dateStr).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 

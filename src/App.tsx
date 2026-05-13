@@ -1,7 +1,7 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
 import { generateBoard } from './lib/boardGen';
 import { applyMove, getCapturedColor, isSolved } from './lib/floodFill';
-import { getTodayDateStr, getPuzzleNumber } from './lib/puzzle';
+import { getGameDateKey, getPuzzleNumber } from './lib/puzzle';
 import { useAuth } from './hooks/useAuth';
 import { useLeaderboard } from './hooks/useLeaderboard';
 import Board from './components/Board';
@@ -9,7 +9,7 @@ import ColorPicker from './components/ColorPicker';
 import GameHeader from './components/GameHeader';
 import CompletionModal from './components/CompletionModal';
 import AuthBar from './components/AuthBar';
-
+import NextPuzzleCountdown from './components/NextPuzzleCountdown';
 import Leaderboard from './components/Leaderboard';
 
 // ── State ──────────────────────────────────────────────
@@ -36,7 +36,7 @@ type GameAction =
   | { type: 'SIGN_OUT_RESET' };
 
 function createInitialState(): GameState {
-  const dateStr = getTodayDateStr();
+  const dateStr = getGameDateKey();
   let board = generateBoard(dateStr);
   let moveHistory: number[] = [];
   let moveCount = 0;
@@ -167,7 +167,7 @@ export default function App() {
   // ── UTC midnight rollover detection ──
   useEffect(() => {
     const interval = setInterval(() => {
-      const currentDate = getTodayDateStr();
+      const currentDate = getGameDateKey();
       if (currentDate !== state.dateStr) {
         autoSaveTriggered.current = false;
         existingScoreChecked.current = false;
@@ -268,20 +268,25 @@ export default function App() {
           moveCount={state.moveCount}
         />
 
-        {/* Already-played message */}
-        {alreadyPlayed && (
-          <div className="text-center animate-fade-in">
-            <p className="text-sm text-gray-400">
-              You already completed today's puzzle in{' '}
-              <span className="font-semibold text-gray-600">{leaderboard.userScore!.moves} moves</span>.
-              Come back tomorrow for a new one!
-            </p>
+        {/* Board Container with Overlay */}
+        <div className="relative">
+          <div className={`bg-white/80 backdrop-blur-xl rounded-[20px] p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 transition-all duration-500 ${alreadyPlayed ? 'blur-[2px] opacity-40 pointer-events-none' : ''}`}>
+            <Board board={state.board} />
           </div>
-        )}
 
-        {/* Board */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-[20px] p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50">
-          <Board board={state.board} />
+          {alreadyPlayed && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center animate-fade-in pointer-events-none">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/50 text-center max-w-[85%] pointer-events-auto">
+                <NextPuzzleCountdown />
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                    You solved today's puzzle in <span className="font-bold text-gray-900">{leaderboard.userScore!.moves} moves</span>.<br/>
+                    Come back tomorrow.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Color Picker — hidden if already played */}

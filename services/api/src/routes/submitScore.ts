@@ -5,7 +5,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { verifyAuth } from '../middleware/auth.js';
 import { generateBoard } from '../shared/boardGen.js';
 import { applyMove, getCapturedColor, isSolved } from '../shared/floodFill.js';
-import { getTodayDateStr, getPuzzleNumber } from '../shared/puzzle.js';
+import { getGameDateKey, getPuzzleNumber } from '../shared/puzzle.js';
 import { NUM_COLORS } from '../shared/constants.js';
 
 export const submitScoreRouter = Router();
@@ -41,12 +41,12 @@ submitScoreRouter.post('/api/submit-score', verifyAuth, async (req, res) => {
 
   const { dateKey, moves } = parsed.data;
 
-  // ── 2. Verify dateKey is today's UTC date ────────────
-  const todayKey = getTodayDateStr();
+  // ── 2. Verify dateKey is today's Pacific Time date ────────────
+  const todayKey = getGameDateKey();
   if (dateKey !== todayKey) {
     console.warn(`[submit-score] Rejected: dateKey=${dateKey} is not today (${todayKey})`);
     res.status(400).json({
-      error: `dateKey must be today's UTC date (${todayKey})`,
+      error: `dateKey must be today's Pacific Time date (${todayKey})`,
     });
     return;
   }

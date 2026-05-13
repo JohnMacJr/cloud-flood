@@ -1,18 +1,85 @@
 import { EPOCH_DATE } from './constants';
 
 /**
- * Returns the current UTC date as YYYY-MM-DD.
+ * Returns the current date as YYYY-MM-DD in America/Los_Angeles.
  */
-export function getTodayDateStr(): string {
-  const now = new Date();
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
+export function getGameDateKey(date = new Date()): string {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day = parts.find((p) => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Returns the UTC date as YYYY-MM-DD.
+ * Used for legacy score fallback.
+ */
+export function getUtcDateKey(date = new Date()): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
 /**
- * Compute the puzzle number: days since epoch (2024-01-01).
+ * Calculates the non-negative countdown to the next Pacific midnight.
+ */
+export function getTimeUntilNextPuzzle(date = new Date()): {
+  hours: number;
+  minutes: number;
+  seconds: number;
+} {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hourCycle: 'h23',
+  });
+  const parts = formatter.formatToParts(date);
+  const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+  const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+  const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+
+  let s = 60 - second;
+  let m = 59 - minute;
+  let h = 23 - hour;
+
+  if (s === 60) {
+    s = 0;
+    m += 1;
+  }
+  if (m === 60) {
+    m = 0;
+    h += 1;
+  }
+
+  // Ensure non-negative
+  return {
+    hours: Math.max(0, h),
+    minutes: Math.max(0, m),
+    seconds: Math.max(0, s),
+  };
+}
+
+/**
+ * Calculates the Date representing the next midnight in America/Los_Angeles.
+ */
+export function getNextPacificMidnight(date = new Date()): Date {
+  const { hours, minutes, seconds } = getTimeUntilNextPuzzle(date);
+  const msUntil = (hours * 3600 + minutes * 60 + seconds) * 1000 - date.getMilliseconds();
+  return new Date(date.getTime() + Math.max(0, msUntil));
+}
+
+/**
+ * Compute the puzzle number: days since epoch (2026-05-07).
  */
 export function getPuzzleNumber(dateStr: string): number {
   const [y, m, d] = dateStr.split('-').map(Number);

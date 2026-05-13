@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getFirestore } from 'firebase-admin/firestore';
 import { verifyAuth } from '../middleware/auth.js';
-import { getTodayDateStr } from '../shared/puzzle.js';
+import { getGameDateKey } from '../shared/puzzle.js';
 
 export const meRouter = Router();
 
@@ -12,7 +12,7 @@ export const meRouter = Router();
  */
 meRouter.get('/api/me/today', verifyAuth, async (req, res) => {
   const uid = req.user!.uid;
-  const dateKey = getTodayDateStr();
+  const dateKey = getGameDateKey();
   const db = getFirestore();
 
   try {

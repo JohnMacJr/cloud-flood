@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getFirestore } from 'firebase-admin/firestore';
 import { verifyAuth } from '../middleware/auth.js';
-import { getTodayDateStr } from '../shared/puzzle.js';
+import { getGameDateKey } from '../shared/puzzle.js';
 
 export const leaderboardRouter = Router();
 
@@ -12,7 +12,7 @@ export const leaderboardRouter = Router();
  * Requires authentication.
  */
 leaderboardRouter.get('/api/leaderboard/today', verifyAuth, async (_req, res) => {
-  const dateKey = getTodayDateStr();
+  const dateKey = getGameDateKey();
   const db = getFirestore();
 
   try {

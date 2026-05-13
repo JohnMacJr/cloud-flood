@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { AppUser } from '../hooks/useAuth';
+import { getUtcDateKey } from './puzzle';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -115,8 +116,22 @@ export async function getUserTodayScore(
   uid: string,
   dateKey: string,
 ): Promise<LeaderboardEntry | null> {
+  // First check primary key
   const snap = await getDoc(leaderboardScoreRef(dateKey, uid));
-  return snap.exists() ? (snap.data() as LeaderboardEntry) : null;
+  if (snap.exists()) {
+    return snap.data() as LeaderboardEntry;
+  }
+
+  // Fallback: check legacy UTC key if different
+  const utcDateKey = getUtcDateKey();
+  if (dateKey !== utcDateKey) {
+    const utcSnap = await getDoc(leaderboardScoreRef(utcDateKey, uid));
+    if (utcSnap.exists()) {
+      return utcSnap.data() as LeaderboardEntry;
+    }
+  }
+
+  return null;
 }
 
 /**
